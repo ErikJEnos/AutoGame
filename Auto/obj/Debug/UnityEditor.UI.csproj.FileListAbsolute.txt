@@ -1,0 +1,2 @@
+F:\school\SchoolWork\Auto\obj\Debug\UnityEditor.UI.csproj.AssemblyReference.cache
+F:\school\SchoolWork\Auto\obj\Debug\UnityEditor.UI.csproj.CoreCompileInputs.cache

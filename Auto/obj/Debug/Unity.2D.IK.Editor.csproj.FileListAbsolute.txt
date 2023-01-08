@@ -1,0 +1,2 @@
+F:\school\SchoolWork\Auto\obj\Debug\Unity.2D.IK.Editor.csproj.AssemblyReference.cache
+F:\school\SchoolWork\Auto\obj\Debug\Unity.2D.IK.Editor.csproj.CoreCompileInputs.cache

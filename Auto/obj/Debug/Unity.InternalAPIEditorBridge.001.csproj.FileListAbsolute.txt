@@ -1,0 +1,2 @@
+F:\school\SchoolWork\Auto\obj\Debug\Unity.InternalAPIEditorBridge.001.csproj.AssemblyReference.cache
+F:\school\SchoolWork\Auto\obj\Debug\Unity.InternalAPIEditorBridge.001.csproj.CoreCompileInputs.cache
