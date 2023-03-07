@@ -53,15 +53,23 @@
     <UnityVersion>2020.3.25f1</UnityVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Networking\NetworkedClientProcessing.cs" />
+    <Compile Include="Assets\Scripts\VersusMode\CardDrag.cs" />
     <Compile Include="Assets\Scripts\PickACard.cs" />
+    <Compile Include="Assets\Scripts\VersusMode\VersusModeGameLoop.cs" />
+    <Compile Include="Assets\Scripts\Networking\GameRoom.cs" />
     <Compile Include="Assets\Scripts\Player.cs" />
     <Compile Include="Assets\Scripts\Enemy.cs" />
+    <Compile Include="Assets\Scripts\VersusMode\PickingCards.cs" />
+    <Compile Include="Assets\Scripts\Networking\GameLogic.cs" />
+    <Compile Include="Assets\Scripts\MainMenuScripts\MainMenuButtons.cs" />
+    <Compile Include="Assets\Scripts\Networking\NetworkedClient.cs" />
     <Compile Include="Assets\Scripts\Card.cs" />
     <Compile Include="Assets\Scripts\GameLoop.cs" />
-    <Compile Include="Assets\Scripts\GameState.cs" />
-    <Compile Include="Assets\Scripts\MainMenuScripts\MainMenuButtons.cs" />
     <Compile Include="Assets\Scripts\PauseMenu.cs" />
+    <Compile Include="Assets\Scripts\Networking\AccountLogin.cs" />
     <Compile Include="Assets\Scripts\OnHoverButton.cs" />
+    <Compile Include="Assets\Scripts\GameState.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />

@@ -43,5 +43,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1c32041db02c9e43a34e7e27a0df14f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Deck:
-  - {fileID: 0}
+  deck: []
+  deckOrdered: []
+  cardId: []
+  id: 1
+  isReady: 0

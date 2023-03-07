@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-
+using System.Linq;
 
 public class GameLoop : MonoBehaviour
 {
@@ -29,6 +29,7 @@ public class GameLoop : MonoBehaviour
 
     public TMP_Text PhaseText;
     private GameObject gameManager;
+    private GameObject gameLogic;
     public float gameSpeed;
     public bool hasWon = false;
     
@@ -39,38 +40,47 @@ public class GameLoop : MonoBehaviour
     public bool isPaused = false;
     public bool isAutoPlay = false;
 
-    private IEnumerator coroutine;
 
     // Start is called before the first frame update
     void Start()
     {
-        gameSpeed = 1.0f;
-        player = GameObject.Find("Player");
-        enemy = GameObject.Find("Enemy");
+        gameSpeed = 0.5f;
+        player = GameObject.Find("Player1");
+        enemy = GameObject.Find("Player2");
         gameManager = GameObject.Find("GameManager");
+        gameLogic = GameObject.Find("GameLogic");
     }
 
     private void Update()
     {
-
-        if(gameManager.GetComponent<GameState>().gameState == 2 && isAutoPlay)
-        {      
-            gameManager.GetComponent<GameState>().gameState = 3;
-            StartCoroutine(GamePlayLoop(gameSpeed));
+        if (gameManager.GetComponent<GameState>().gameState == 2)
+        {
+            if(enemyDeckOrder.Count <= 5)
+            {
+                foreach (GameObject cards in enemy.GetComponent<Player>().deckOrdered)
+                {
+                    enemyDeckOrder.Insert(0,cards);
+                }
+            }
+            else
+            {
+                CheckLevel();
+                gameManager.GetComponent<GameState>().gameState = 3;
+                StartCoroutine(GamePlayLoop(gameSpeed));
+            }
         }
     }
 
     public IEnumerator GamePlayLoop(float waitTime)
     {
-        while(!isPaused && !isAutoPlay)
-        {
-            yield return null;
-        }
 
-        PhaseText.text = "Phase: Start";
+        yield return new WaitForSeconds(waitTime);
+
         CheckWinner();
 
-        if (playerDeckOrder.Count > 0 || enemyDeckOrder.Count > 0)
+        PhaseText.text = "Phase: Start";
+        
+        if (player.GetComponent<Player>().deckOrdered.Count > 0 || enemy.GetComponent<Player>().deckOrdered.Count > 0)
         {
             yield return new WaitForSeconds(waitTime);
             CheckSlot();
@@ -85,33 +95,36 @@ public class GameLoop : MonoBehaviour
             SetCard();
             PhaseText.text = "Phase: Setcard";
 
+            CheckMonsters();
+
         }
 
-        //CardCleanUp();
 
         yield return new WaitForSeconds(waitTime);
         MonsterAttack();
         PhaseText.text = "Phase: Fight";
 
-    
+        yield return new WaitForSeconds(waitTime);
+        CheckPoisonedDebuff();
+
         yield return new WaitForSeconds(waitTime);
         CardCleanUp();
         PhaseText.text = "Phase: End turn";
 
         yield return new WaitForSeconds(waitTime);
 
+        MoveCards();
+
         isPaused = false;
 
         StartCoroutine(GamePlayLoop(gameSpeed));
-
-
 
     }
 
     private void CheckWinner()
     {
 
-        if(playerDeckOrder.Count <= 0 && enemyDeckOrder.Count <= 0 && hasWon == false)
+        if(player.GetComponent<Player>().deckOrdered.Count <= 0 && enemy.GetComponent<Player>().deckOrdered.Count <= 0 && hasWon == false)
         {
             int enemyCount = 0;
             int playerCount = 0;
@@ -132,24 +145,30 @@ public class GameLoop : MonoBehaviour
                 }
             }
 
-            //Debug.Log("Player count " + playerCount);
-           // Debug.Log("Enemy count " + enemyCount);
-
             if (playerCount == 0)
             {
                 hasWon = true;
-                //Debug.Log("P1 Wins");
-                //WinningText.text = "P1 Wins";
                 BackToPickACard();
+                gameManager.GetComponent<VersusModeGameLoop>().done = false;
+                gameManager.GetComponent<VersusModeGameLoop>().checkedPl = false;
+                gameManager.GetComponent<PickingCards>().OnSceneLoad();
+                gameLogic.GetComponent<GameLogic>().playerWins+=1;
+                gameLogic.GetComponent<GameLogic>().playerTurn += 1;
+                EmptyDeckorder();
+
             }
             else if (enemyCount == 0)
             {
                 hasWon = true;
-                //Debug.Log("P2 Wins");
-                //WinningText.text = "P2 Wins";
                 BackToPickACard();
+                gameManager.GetComponent<VersusModeGameLoop>().done = false;
+                gameManager.GetComponent<VersusModeGameLoop>().checkedPl = false;
+                gameManager.GetComponent<PickingCards>().OnSceneLoad();
+                gameLogic.GetComponent<GameLogic>().playerloses-=1;
+                gameLogic.GetComponent<GameLogic>().playerTurn += 1;
+                EmptyDeckorder();
             }
-
+            
         }
 
 
@@ -163,26 +182,16 @@ public class GameLoop : MonoBehaviour
 
         for (int x = 0; x < playerSlotPos.Count; x++)
         {
-            if (playerSlotPos[x].tag != "Card")
+            if (playerSlotPos[x].tag == "Card")
             {
-                //Debug.Log("no monster is slot " + x);
-            }
-            else
-            {
-                //Debug.Log("moster card in slot " + x + " moving next monster to open slot");
                 playerMosterSlot = x + 1;
             }
         }
 
         for (int x = 0; x < enemySlotPos.Count; x++)
         {
-            if (enemySlotPos[x].tag != "Card")
+            if (enemySlotPos[x].tag == "Card")
             {
-                //Debug.Log("no monster is slot " + x);
-            }
-            else
-            {
-                //Debug.Log("moster card in slot " + x + " moving next monster to open slot");
                 enemyMosterSlot = x + 1;
             }
         }
@@ -191,9 +200,8 @@ public class GameLoop : MonoBehaviour
 
     private void SetCard()
     {
-        if(card != null)
+        if(card != null && enemyCard != null)
         {
-
 
             if (enemyCard.GetComponent<Card>().isMonster == false && card.GetComponent<Card>().isMonster)
             {
@@ -247,32 +255,73 @@ public class GameLoop : MonoBehaviour
             {
                 playerSlotPos[0].GetComponent<Card>().defence -= enemySlotPos[0].GetComponent<Card>().attack;
                 enemySlotPos[0].GetComponent<Card>().defence -= playerSlotPos[0].GetComponent<Card>().attack;
+
+                playerSlotPos[0].GetComponent<Card>().isPoisoned = enemySlotPos[0].GetComponent<Card>().canPoison;
+                enemySlotPos[0].GetComponent<Card>().isPoisoned = playerSlotPos[0].GetComponent<Card>().canPoison;
+
+
+                playerSlotPos[0].GetComponent<Card>().damageInfoText.color = Color.red;
+                playerSlotPos[0].GetComponent<Card>().damageInfoText.text = "-" + enemySlotPos[0].GetComponent<Card>().attack;
+                
+                enemySlotPos[0].GetComponent<Card>().damageInfoText.color = Color.red;
+                enemySlotPos[0].GetComponent<Card>().damageInfoText.text = "-" + playerSlotPos[0].GetComponent<Card>().attack;
             }
         }
+    }
+
+    public void DestroyMonster(GameObject card) 
+    {
+    
+        card.SetActive(false);
+        playerSlotPos.Remove(card);
+     
     }
 
     private void CardCleanUp()
     {
 
-        if (playerSlotPos[0].GetComponent<Card>() != null)
+        if (playerSlotPos[0].GetComponent<Card>() != null && enemySlotPos[0].GetComponent<Card>() != null)
         {
-            if (playerSlotPos[0].GetComponent<Card>().defence <= 0)
+            playerSlotPos[0].GetComponent<Card>().damageInfoText.text = "";
+            enemySlotPos[0].GetComponent<Card>().damageInfoText.text = "";
+
+
+            if (playerSlotPos[0].GetComponent<Card>().defence <= 0 && enemySlotPos[0].GetComponent<Card>().defence <= 0)
             {
+                OnDeath(playerSlotPos[0].GetComponent<Card>().cardID, playerSlotPos[0]);
+                OnDeath(enemySlotPos[0].GetComponent<Card>().cardID, enemySlotPos[0]);
+
+                playerSlotPos[0].SetActive(false);
+                playerSlotPos.Remove(playerSlotPos[0]);
+
+                enemySlotPos[0].SetActive(false);
+                enemySlotPos.Remove(enemySlotPos[0]);
+
+            }
+            else if (playerSlotPos[0].GetComponent<Card>().defence <= 0 && enemySlotPos[0].GetComponent<Card>().defence > 0)
+            {
+                OnDeath(playerSlotPos[0].GetComponent<Card>().cardID, playerSlotPos[0]);
+                OnKill(enemySlotPos[0]);
+                Debug.Log("enemy card on kill");
+
                 playerSlotPos[0].SetActive(false);
                 playerSlotPos.Remove(playerSlotPos[0]);
             }
-
-        }
-
-        if (enemySlotPos[0].GetComponent<Card>() != null)
-        {
-            if (enemySlotPos[0].GetComponent<Card>().defence <= 0)
+            else if (playerSlotPos[0].GetComponent<Card>().defence > 0 && enemySlotPos[0].GetComponent<Card>().defence <= 0)
             {
+                OnDeath(enemySlotPos[0].GetComponent<Card>().cardID, enemySlotPos[0]);
+                OnKill(playerSlotPos[0]);
+
+                Debug.Log("Player card on kill");
                 enemySlotPos[0].SetActive(false);
                 enemySlotPos.Remove(enemySlotPos[0]);
             }
-        }
 
+        }
+    }
+
+    public void MoveCards()
+    {
         for (int x = 0; x < playerSlotPos.Count; x++)
         {
             if (playerSlotPos[x].GetComponent<Card>() is null)
@@ -297,7 +346,6 @@ public class GameLoop : MonoBehaviour
                 enemySlotPos[x].transform.position = enemySlotPosTemp[x].transform.position;
             }
         }
-
     }
 
     public void PlayCard()
@@ -307,18 +355,22 @@ public class GameLoop : MonoBehaviour
         {
             card = player.GetComponent<Player>().deckOrdered[player.GetComponent<Player>().deckOrdered.Count - 1];
             card.transform.position = playerSpellPos.transform.position;
-            player.GetComponent<Player>().deckOrdered.RemoveAt(player.GetComponent<Player>().deckOrdered.Count - 1);
-
-            enemyCard = enemyDeckOrder[enemyDeckOrder.Count - 1];
-            enemyCard.transform.position = enemySpellPos.transform.position;
-            enemyDeckOrder.RemoveAt(enemyDeckOrder.Count - 1);
-
-            CheckSpell(1, enemyCard);
-            CheckSpell(1, card);   
+            player.GetComponent<Player>().deckOrdered.RemoveAt(player.GetComponent<Player>().deckOrdered.Count - 1);      
         }
         else
         {
             card = null;
+        }
+
+        if(enemy.GetComponent<Player>().deckOrdered.Count > 0)
+        {
+            enemyCard = enemy.GetComponent<Player>().deckOrdered[enemy.GetComponent<Player>().deckOrdered.Count - 1];
+            enemyCard.transform.position = enemySpellPos.transform.position;
+            enemy.GetComponent<Player>().deckOrdered.RemoveAt(enemy.GetComponent<Player>().deckOrdered.Count - 1);
+        }
+        else
+        {
+            
             enemyCard = null;
         }
     }
@@ -330,14 +382,13 @@ public class GameLoop : MonoBehaviour
 
         StopAllCoroutines();
         gameManager.GetComponent<GameState>().gameState = 0;
-        gameManager.GetComponent<PickACard>().OnSceneLoad();
-
+        
         foreach(GameObject card in player.GetComponent<Player>().deck)
         {
             card.GetComponent<Card>().CheckCardID();
         }
 
-        foreach (GameObject card in enemy.GetComponent<Enemy>().deck)
+        foreach (GameObject card in enemy.GetComponent<Player>().deck)
         {
             card.GetComponent<Card>().CheckCardID();
         }
@@ -362,57 +413,76 @@ public class GameLoop : MonoBehaviour
                 enemySlotPos.Remove(enemySlotPos[0]); 
             }
         }
+        temp = playerDeckOrder.Count;
+        for(int c = 0; c < temp; c++)
+        {
+            playerDeckOrder.RemoveAt(0);
+        }
 
+        temp = enemyDeckOrder.Count;
+        for (int c = 0; c < temp; c++)
+        {
+            enemyDeckOrder.RemoveAt(0);
+        }
 
     }
 
     public void CheckSpell(int id, GameObject playerID)
     {
-        if (id == 3)
+        if (id == 9)
         {
-            if (playerID.GetComponent<Card>().playerID == 1)
+            Debug.Log("Checking spell: " + playerID.GetComponent<Card>().playerID);
+
+            if (playerID.GetComponent<Card>().playerID == player.GetComponent<Player>().id)
             {
                 if (playerSlotPos[0].GetComponent<Card>() is null)
                 {
-                    if (enemySlotPos[0].GetComponent<Card>() != null)
+                    if (enemySlotPos[0].GetComponent<Card>() != null && enemySlotPos[0].GetComponent<Card>().canTarget)
                     {
                         enemySlotPos[0].GetComponent<Card>().defence -= 1;
+                        enemySlotPos[0].GetComponent<Card>().damageInfoText.color = Color.red;
+                        enemySlotPos[0].GetComponent<Card>().damageInfoText.text = "-" + 1;
                     }
                     else
                     {
-                        //Debug.Log("Not hitting anything");
+                        Debug.Log("Not hitting anything");
                     }
                 }
                 else
                 {
                     playerSlotPos[0].GetComponent<Card>().defence += 1;
-                    //Debug.Log("Not hitting anything again");
+                    Debug.Log("Not hitting anything again");
                 }
             }
-            else if (playerID.GetComponent<Card>().playerID == 2)
+            if(playerID.GetComponent<Card>().playerID == enemy.GetComponent<Player>().id)
             {
+                Debug.Log("Checking spell: " + playerID.GetComponent<Card>().playerID);
                 if (enemySlotPos[0].GetComponent<Card>() is null)
                 {
-                    if (playerSlotPos[0].GetComponent<Card>() != null)
+                    if (playerSlotPos[0].GetComponent<Card>() != null && playerSlotPos[0].GetComponent<Card>().canTarget)
                     {
                         playerSlotPos[0].GetComponent<Card>().defence -= 1;
+                        playerSlotPos[0].GetComponent<Card>().damageInfoText.color = Color.red;
+                        playerSlotPos[0].GetComponent<Card>().damageInfoText.text = "-" + 1;
                     }
                     else
                     {
-                        //Debug.Log("Not hitting anything");
+                        Debug.Log("Not hitting anything");
                     }
                 }
                 else
                 {
                     enemySlotPos[0].GetComponent<Card>().defence += 1;
-                    //Debug.Log("Not hitting anything again");
+                    enemySlotPos[0].GetComponent<Card>().damageInfoText.color = Color.green;
+                    enemySlotPos[0].GetComponent<Card>().damageInfoText.text = "+" + 1;
+                    Debug.Log("Not hitting anything again");
                 }
             }
 
         }
-        else if (id == 4)
+        else if (id == 10)
         {
-            if (playerID.GetComponent<Card>().playerID == 1)
+            if (playerID.GetComponent<Card>().playerID == player.GetComponent<Player>().id)
             {
                 if (playerSlotPos[0].GetComponent<Card>() is null)
                 {
@@ -421,24 +491,26 @@ public class GameLoop : MonoBehaviour
                     temp.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
                     playerSlotPos[playerMosterSlot] = temp;
                     playerSlotPos[playerMosterSlot].GetComponent<Card>().setCardId(99);
-                    //Debug.Log("SPawning in card");
+                    Debug.Log("SPawning in card");
                 }
                 else
                 {
-                    if (enemySlotPos[0].GetComponent<Card>() != null)
+                    if (enemySlotPos[0].GetComponent<Card>() != null && enemySlotPos[0].GetComponent<Card>().canTarget)
                     {
                         enemySlotPos[0].GetComponent<Card>().defence -= 2;
+                        enemySlotPos[0].GetComponent<Card>().damageInfoText.color = Color.red;
+                        enemySlotPos[0].GetComponent<Card>().damageInfoText.text = "-" + 2;
                     }
                     else
                     {
-                        //Debug.Log("Not hitting anything");
+                        Debug.Log("Not hitting anything");
                     }
                 }
 
             }
-
-            if (playerID.GetComponent<Card>().playerID == 2)
+            if(playerID.GetComponent<Card>().playerID == enemy.GetComponent<Player>().id)
             {
+                Debug.Log("Checking spell: " + playerID.GetComponent<Card>().playerID);
                 if (enemySlotPos[0].GetComponent<Card>() is null)
                 {
                     GameObject temp = Instantiate(cardPrefab, enemySlotPos[enemyMosterSlot].transform.position, transform.rotation);
@@ -446,27 +518,142 @@ public class GameLoop : MonoBehaviour
                     temp.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
                     enemySlotPos[enemyMosterSlot] = temp;
                     enemySlotPos[enemyMosterSlot].GetComponent<Card>().setCardId(99);
-                    //Debug.Log("SPawning in card");
+                    Debug.Log("SPawning in card");
                 }
                 else
                 {
-                    if (playerSlotPos[0].GetComponent<Card>() != null)
+                    if (playerSlotPos[0].GetComponent<Card>() != null && playerSlotPos[0].GetComponent<Card>().canTarget)
                     {
                         playerSlotPos[0].GetComponent<Card>().defence -= 2;
+                        playerSlotPos[0].GetComponent<Card>().damageInfoText.color = Color.red;
+                        playerSlotPos[0].GetComponent<Card>().damageInfoText.text = "-" + 2;
                     }
                     else
                     {
-                        //Debug.Log("Not hitting anything");
+                        Debug.Log("Not hitting anything");
                     }
                 }
+            }
+        }
+    }
 
+    public void CheckPoisonedDebuff()
+    {
+        
+        foreach (GameObject card in playerSlotPos)
+        {
+            if (card.GetComponent<Card>() != null)
+            {
+                if (card.GetComponent<Card>().isPoisoned)
+                {
+                    card.GetComponent<Card>().defence -= 1;
+                    card.GetComponent<Card>().damageInfoText.color = Color.blue;
+                    card.GetComponent<Card>().damageInfoText.text = "-" + 1;
+                }
+            }
+        }
+        
+
+      
+        foreach (GameObject card in enemySlotPos)
+        {
+            if(card.GetComponent<Card>() != null)
+            {
+                if (card.GetComponent<Card>().isPoisoned)
+                {
+                    card.GetComponent<Card>().defence -= 1;
+                    card.GetComponent<Card>().damageInfoText.color = Color.blue;
+                    card.GetComponent<Card>().damageInfoText.text = "-" + 1;
+                }
+            }
+        }
+        
+    }
+
+    public void CheckMonsters()
+    {
+        int goblinCount = 0;
+        int humanCount = 0;
+
+        foreach (GameObject card in enemySlotPos)
+        {
+            if (card.GetComponent<Card>() != null)
+            {
+                if (card.GetComponent<Card>().cardID == 3)
+                {
+                    card.GetComponent<Card>().defence = card.GetComponent<Card>().defence += goblinCount;
+                }
+
+                if (card.GetComponent<Card>().cardID == 5)
+                {
+                    card.GetComponent<Card>().defence = card.GetComponent<Card>().defence += humanCount;
+                }
+            }
+        }
+
+        foreach (GameObject card in enemySlotPos)
+        {
+            if (card.GetComponent<Card>() != null)
+            {
+                if (card.GetComponent<Card>().cardID == 3)
+                {
+                    card.GetComponent<Card>().defence = card.GetComponent<Card>().defence += goblinCount;
+                }
+
+                if (card.GetComponent<Card>().cardID == 5)
+                {
+                    card.GetComponent<Card>().defence = card.GetComponent<Card>().defence += humanCount;
+                }
+            }
+        }
+
+
+        goblinCount = 0;
+        humanCount = 0;
+
+        foreach (GameObject card in playerSlotPos)
+        {
+            if (card.GetComponent<Card>() != null)
+            {
+                if (card.GetComponent<Card>().cardID == 3)
+                {
+                    goblinCount++;
+                }
+
+                if (card.GetComponent<Card>().cardID == 5)
+                {
+                    humanCount++;
+                }
+            }
+        }
+
+        foreach (GameObject card in playerSlotPos)
+        {
+            if (card.GetComponent<Card>() != null)
+            {
+                if (card.GetComponent<Card>().cardID == 3)
+                {
+                    card.GetComponent<Card>().defence = goblinCount;
+                }
+
+                if (card.GetComponent<Card>().cardID == 5)
+                {
+                    card.GetComponent<Card>().defence = humanCount;
+                }
             }
         }
     }
 
     public void OnStart()
     {
-        for(int x = 0; x < 5; x++)
+        gameManager.GetComponent<PickingCards>().ChangeScene(2);
+
+        gameManager.GetComponent<VersusModeGameLoop>().SetUpPlayer1Deck();
+
+
+        enemy = GameObject.Find("Player2");
+
+        for (int x = 0; x < 5; x++)
         {
             if(playerSlotPos.Count > 0)
             {
@@ -493,8 +680,132 @@ public class GameLoop : MonoBehaviour
             enemySlotPos.Add(enemySlotPosTemp[s]);
         }
 
+
+        foreach(GameObject card in player.GetComponent<Player>().deckOrdered)
+        {
+            playerDeckOrder.Insert(0,card);
+        }
+
+        gameManager.GetComponent<GameState>().gameState = 2;
+
     }
 
+    public bool OnDeath(int id, GameObject playerID)
+    {
+        if (id == 0)
+        {
+            if (playerID.GetComponent<Card>().playerID == player.GetComponent<Player>().id)
+            {
+                GameObject temp = Instantiate(cardPrefab, playerSlotPos[0].transform.position, transform.rotation);
+                temp.transform.parent = playerDeckPos.transform;
+                temp.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+                playerSlotPos.Insert(1,temp);
+                playerSlotPos[1].GetComponent<Card>().setCardId(98);
+                Debug.Log("SPawning in card");
+            }
+            
+            if(playerID.GetComponent<Card>().playerID == enemy.GetComponent<Player>().id)
+            { 
+                GameObject temp = Instantiate(cardPrefab, enemySlotPos[0].transform.position, transform.rotation);
+                temp.transform.parent = enemyDeckPos.transform;
+                temp.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+                enemySlotPos.Insert(1, temp);
+                enemySlotPos[1].GetComponent<Card>().setCardId(98);
+                Debug.Log("SPawning in card");
 
+            }
+            return true;
+        }
+        if (id == 1)
+        {
+            if (playerID.GetComponent<Card>().playerID == player.GetComponent<Player>().id)
+            {
+                if (enemySlotPos[enemyMosterSlot] != null)
+                {                 
+                    enemySlotPos[enemyMosterSlot].GetComponent<Card>().defence -= 1;
+                    enemySlotPos[enemyMosterSlot].GetComponent<Card>().damageInfoText.color = Color.red;
+                    enemySlotPos[enemyMosterSlot].GetComponent<Card>().damageInfoText.text = "-" + 1;
+                }
+            }
 
+            if (playerID.GetComponent<Card>().playerID == enemy.GetComponent<Player>().id)
+            {
+                if(playerSlotPos[playerMosterSlot] != null)
+                {             
+                    playerSlotPos[playerMosterSlot].GetComponent<Card>().defence -= 1;
+                    playerSlotPos[playerMosterSlot].GetComponent<Card>().damageInfoText.color = Color.red;
+                    playerSlotPos[playerMosterSlot].GetComponent<Card>().damageInfoText.text = "-" + 1;
+
+                }
+            }
+        }
+        if (id == -1)
+        {
+            if (playerID.GetComponent<Card>().playerID == player.GetComponent<Player>().id)
+            {
+
+            }
+
+            if (playerID.GetComponent<Card>().playerID == enemy.GetComponent<Player>().id)
+            {
+
+            }
+
+        }
+
+        if (id == -1)
+        {
+            if (playerID.GetComponent<Card>().playerID == player.GetComponent<Player>().id)
+            {
+
+            }
+
+            if (playerID.GetComponent<Card>().playerID == enemy.GetComponent<Player>().id)
+            {
+
+            }
+        }
+
+        
+
+        return false;
+    }
+
+    public void OnKill(GameObject aliveCard)
+    {
+        Debug.Log("Alive Card " + aliveCard.GetComponent<Card>().cardID);
+        
+        if (aliveCard.GetComponent<Card>().cardID == 7)
+        {
+            Debug.Log("wolves");
+            aliveCard.GetComponent<Card>().defence++;
+        }
+     
+    }
+
+    public void CheckLevel()
+    {
+        foreach(GameObject card in enemyDeckOrder)
+        {
+            card.GetComponent<Card>().CheckCardID();       
+        }
+    }
+
+    public void SetPlayerDeckIDs(int id )
+    {
+        foreach(GameObject card in playerDeckOrder)
+        {
+            card.GetComponent<Card>().playerID = id;
+        }
+    }
+
+    public void EmptyDeckorder()
+    {
+        int deckCount = enemyDeckOrder.Count;
+
+        for(int x = 0; x < deckCount; x++)
+        {
+            enemyDeckOrder.RemoveAt(0);
+        }
+    }
 }

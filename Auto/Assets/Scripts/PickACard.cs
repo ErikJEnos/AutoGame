@@ -26,11 +26,15 @@ public class PickACard : MonoBehaviour
 
 
     GameObject gameManager;
+    GameObject menuManager;
+
+    public bool bothPlayerReady = true;
 
     // Start is called before the first frame update
     void Start()
     {
         gameManager = GameObject.Find("GameManager");
+        menuManager = GameObject.Find("MenuManager");
         OnSceneLoad();
     }
 
@@ -76,21 +80,31 @@ public class PickACard : MonoBehaviour
     {
         if(Player.GetComponent<Player>().deckOrdered.Count >= 5)
         {
-            pickLeftInt = 5;
-            Scene1.SetActive(false);
-            Scene2.SetActive(false);
-            Scene3.SetActive(true);
-            gameManager.GetComponent<GameState>().gameState = 2;
-            gameManager.GetComponent<GameLoop>().hasWon = false;
-            gameManager.GetComponent<GameLoop>().OnStart();
-            enemy.GetComponent<Enemy>().OnEnemyStart();
-        
-            foreach (GameObject card in Player.GetComponent<Player>().deckOrdered)
+            if (bothPlayerReady)
             {
-                card.SetActive(true);
-                card.GetComponent<Card>().playerID = 1;
-                card.transform.position = new Vector3(gameDeckLocation.transform.position.x, gameDeckLocation.transform.position.y, gameDeckLocation.transform.position.z);
-                card.transform.parent = gameDeckLocation.transform;
+                menuManager.GetComponent<NetworkedClient>().SendMessageToServer(ClientToServerSignifiers.SendPlayerData + "," + card.GetComponent<Card>().cardID.ToString() + ",");
+
+
+                pickLeftInt = 5;
+                Scene1.SetActive(false);
+                Scene2.SetActive(false);
+                Scene3.SetActive(true);
+                gameManager.GetComponent<GameState>().gameState = 2;
+                gameManager.GetComponent<GameLoop>().hasWon = false;
+                gameManager.GetComponent<GameLoop>().OnStart();
+                //enemy.GetComponent<Enemy>().OnEnemyStart();
+
+
+
+                foreach (GameObject card in Player.GetComponent<Player>().deckOrdered)
+                {
+                    card.SetActive(true);
+                    card.GetComponent<Card>().playerID = 1;
+                    card.transform.position = new Vector3(gameDeckLocation.transform.position.x, gameDeckLocation.transform.position.y, gameDeckLocation.transform.position.z);
+                    card.transform.parent = gameDeckLocation.transform;
+
+                    // menuManager.GetComponent<NetworkedClient>().SendMessageToServer(ClientToServerSignifiers.SendPlayerData + "," + card.GetComponent<Card>().cardID.ToString() + ",");
+                }
             }
         }
     }
@@ -131,6 +145,7 @@ public class PickACard : MonoBehaviour
         float offset = 2.0f;
         for (int x = 0; x < Player.GetComponent<Player>().deck.Count; x++)
         {
+            
             Player.GetComponent<Player>().deck[x].transform.position = new Vector3(deckSpawnLocation.transform.position.x + offset, deckSpawnLocation.transform.position.y, deckSpawnLocation.transform.position.z);
             Player.GetComponent<Player>().deck[x].GetComponent<Card>().interactable = true;
             
@@ -160,4 +175,5 @@ public class PickACard : MonoBehaviour
 
         DisplayCardsToPick();
     }
+
 }

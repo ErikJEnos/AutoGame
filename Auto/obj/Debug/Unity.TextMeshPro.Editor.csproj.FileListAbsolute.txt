@@ -1,2 +1,0 @@
-F:\school\SchoolWork\Auto\obj\Debug\Unity.TextMeshPro.Editor.csproj.AssemblyReference.cache
-F:\school\SchoolWork\Auto\obj\Debug\Unity.TextMeshPro.Editor.csproj.CoreCompileInputs.cache

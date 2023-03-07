@@ -166,7 +166,7 @@ public class MainMenuButtons : MonoBehaviour
     
     public void QuickPlay()
     {
-        SceneManager.LoadScene("QuickPlay");
+        SceneManager.LoadScene("VersusMode");
     }
 
 
