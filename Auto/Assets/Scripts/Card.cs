@@ -34,6 +34,7 @@ public class Card : MonoBehaviour
 
     public bool isPoisoned = false;
 
+
     GameObject player;
     GameObject gameManager;
     System.Random random = new System.Random();
@@ -68,11 +69,63 @@ public class Card : MonoBehaviour
         attackText.text = attack.ToString();
         defenceText.text = defence.ToString();
         levelText.text = cardLevel.ToString();
+    }
 
-        //if(defence <= 0)
-        //{
-        //    gameManager.GetComponent<GameLoop>().DestroyMonster(gameObject);
-        //}
+    public void OnDeathTrigger()
+    {
+        bool callonce = true;
+
+        if (callonce)
+        {
+
+            if (playerID == gameManager.GetComponent<GameLoop>().enemy.GetComponent<Player>().id)
+            {
+                if (cardID == 1)
+                {
+
+                    if (gameManager.GetComponent<GameLoop>().playerSlotPos[gameManager.GetComponent<GameLoop>().playerMosterSlot].GetComponent<Card>() != null)
+                    {
+                        gameManager.GetComponent<GameLoop>().playerSlotPos[gameManager.GetComponent<GameLoop>().playerMosterSlot].GetComponent<Card>().defence -= 1;
+                        gameManager.GetComponent<GameLoop>().playerSlotPos[gameManager.GetComponent<GameLoop>().playerMosterSlot].GetComponent<Card>().damageInfoText.color = Color.white;
+                        gameManager.GetComponent<GameLoop>().playerSlotPos[gameManager.GetComponent<GameLoop>().playerMosterSlot].GetComponent<Card>().damageInfoText.text = "-" + 1;
+                    }
+
+                }
+
+                if (cardID == 0)
+                {
+                    GameObject temp = Instantiate(gameObject, gameObject.transform.position, transform.rotation);
+                    temp.transform.parent = gameManager.GetComponent<GameLoop>().enemyDeckPos.transform;
+                    temp.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+                    temp.GetComponent<Card>().setCardId(98);
+                    gameManager.GetComponent<GameLoop>().enemySlotPos.Insert(1, temp);
+                    Debug.Log("Enemy spawning in card");
+                }
+            }
+            else if (playerID == player.GetComponent<Player>().id)
+            {
+                if (cardID == 1)
+                {
+                    if (gameManager.GetComponent<GameLoop>().enemySlotPos[gameManager.GetComponent<GameLoop>().enemyMosterSlot].GetComponent<Card>() != null)
+                    {
+                        gameManager.GetComponent<GameLoop>().enemySlotPos[gameManager.GetComponent<GameLoop>().enemyMosterSlot].GetComponent<Card>().defence -= 1;
+                        gameManager.GetComponent<GameLoop>().enemySlotPos[gameManager.GetComponent<GameLoop>().enemyMosterSlot].GetComponent<Card>().damageInfoText.color = Color.white;
+                        gameManager.GetComponent<GameLoop>().enemySlotPos[gameManager.GetComponent<GameLoop>().enemyMosterSlot].GetComponent<Card>().damageInfoText.text = "-" + 1;
+                    }
+                }
+                if (cardID == 0)
+                {
+                    GameObject temp = Instantiate(gameObject, gameObject.transform.position, transform.rotation);
+                    temp.transform.parent = gameManager.GetComponent<GameLoop>().playerDeckPos.transform;
+                    temp.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f);
+                    temp.GetComponent<Card>().setCardId(98);
+                    gameManager.GetComponent<GameLoop>().playerSlotPos.Insert(1, temp);
+                    Debug.Log("Player spawning in card");
+                }
+            }
+
+            callonce = false;
+        }
     }
 
     public void SelectCard()

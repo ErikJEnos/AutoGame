@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+
 public class VersusModeGameLoop : MonoBehaviour
 {
     public GameObject player1;
@@ -12,12 +14,14 @@ public class VersusModeGameLoop : MonoBehaviour
 
     private GameObject gameLogic;
 
-
     public GameObject enemyDeckPos;
 
     public bool done = false;
 
     public bool checkedPl = false;
+
+
+
 
     private void Awake()
     {

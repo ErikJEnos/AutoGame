@@ -17,6 +17,7 @@ public class GameLoop : MonoBehaviour
     public List<GameObject> playerDeckOrder;
     public List<GameObject> playerSlotPos;
     public List<GameObject> playerSlotPosTemp;
+    public List<GameObject> actions;
 
     public GameObject enemyDeckPos;
     public GameObject enemySpellPos;
@@ -59,6 +60,7 @@ public class GameLoop : MonoBehaviour
             {
                 foreach (GameObject cards in enemy.GetComponent<Player>().deckOrdered)
                 {
+                    cards.GetComponent<Card>().CheckCardLevel();
                     enemyDeckOrder.Insert(0,cards);
                 }
             }
@@ -74,7 +76,6 @@ public class GameLoop : MonoBehaviour
     public IEnumerator GamePlayLoop(float waitTime)
     {
 
-        yield return new WaitForSeconds(waitTime);
 
         CheckWinner();
 
@@ -82,27 +83,27 @@ public class GameLoop : MonoBehaviour
         
         if (player.GetComponent<Player>().deckOrdered.Count > 0 || enemy.GetComponent<Player>().deckOrdered.Count > 0)
         {
+            
             yield return new WaitForSeconds(waitTime);
-            CheckSlot();
-
-
-            yield return new WaitForSeconds(waitTime);
+           
+            CheckFilledSlots();
             PlayCard();
             PhaseText.text = "Phase: Show card";
 
 
             yield return new WaitForSeconds(waitTime);
+            
             SetCard();
             PhaseText.text = "Phase: Setcard";
-
-            CheckMonsters();
-
+     
         }
 
 
         yield return new WaitForSeconds(waitTime);
         MonsterAttack();
         PhaseText.text = "Phase: Fight";
+
+        OnDeathTrigger();
 
         yield return new WaitForSeconds(waitTime);
         CheckPoisonedDebuff();
@@ -112,7 +113,6 @@ public class GameLoop : MonoBehaviour
         PhaseText.text = "Phase: End turn";
 
         yield return new WaitForSeconds(waitTime);
-
         MoveCards();
 
         isPaused = false;
@@ -121,9 +121,60 @@ public class GameLoop : MonoBehaviour
 
     }
 
+    private void OnDeathTrigger()
+    {
+        for (int x = 0; x < playerSlotPos.Count; x++)
+        {
+            if (playerSlotPos[x].tag == "Card")
+            {
+                
+                if (playerSlotPos[x].GetComponent<Card>().defence <= 0)
+                {
+                    Debug.Log("Adding cards to the action list");
+                    actions.Add(playerSlotPos[x]);
+                }
+            }
+        }
+
+        for (int x = 0; x < enemySlotPos.Count; x++)
+        {
+            if (enemySlotPos[x].tag == "Card")
+            {
+                if (enemySlotPos[x].GetComponent<Card>().defence <= 0)
+                {
+                    Debug.Log("Adding cards to the action list");
+                    actions.Add(enemySlotPos[x]);
+                }
+            }
+        }
+
+        for (int c = 0; c < actions.Count; c++)
+        {
+            actions[c].GetComponent<Card>().OnDeathTrigger();
+            actions[c].SetActive(false);
+
+            if (enemySlotPos.Remove(actions[c]))
+            {
+                Debug.Log("Removing Enemy Monster from Action list");
+            }
+
+            if (playerSlotPos.Remove(actions[c]))
+            {
+                Debug.Log("Removing Player Monster from Action list");
+            }
+        }
+
+        for(int v = 0; v < actions.Count; v++)
+        {
+            actions.RemoveAt(0);
+        }
+
+    }
+
+
+
     private void CheckWinner()
     {
-
         if(player.GetComponent<Player>().deckOrdered.Count <= 0 && enemy.GetComponent<Player>().deckOrdered.Count <= 0 && hasWon == false)
         {
             int enemyCount = 0;
@@ -175,7 +226,7 @@ public class GameLoop : MonoBehaviour
 
     }
 
-    private void CheckSlot()
+    private void CheckFilledSlots()
     {
         playerMosterSlot = 0;
         enemyMosterSlot = 0;
@@ -269,55 +320,42 @@ public class GameLoop : MonoBehaviour
         }
     }
 
-    public void DestroyMonster(GameObject card) 
-    {
-    
-        card.SetActive(false);
-        playerSlotPos.Remove(card);
-     
-    }
-
     private void CardCleanUp()
     {
 
-        if (playerSlotPos[0].GetComponent<Card>() != null && enemySlotPos[0].GetComponent<Card>() != null)
+        for(int x = 0; x < playerSlotPos.Count; x++)
         {
-            playerSlotPos[0].GetComponent<Card>().damageInfoText.text = "";
-            enemySlotPos[0].GetComponent<Card>().damageInfoText.text = "";
-
-
-            if (playerSlotPos[0].GetComponent<Card>().defence <= 0 && enemySlotPos[0].GetComponent<Card>().defence <= 0)
+            if (playerSlotPos[x].GetComponent<Card>() != null)
             {
-                OnDeath(playerSlotPos[0].GetComponent<Card>().cardID, playerSlotPos[0]);
-                OnDeath(enemySlotPos[0].GetComponent<Card>().cardID, enemySlotPos[0]);
+                playerSlotPos[x].GetComponent<Card>().damageInfoText.text = "";
 
-                playerSlotPos[0].SetActive(false);
-                playerSlotPos.Remove(playerSlotPos[0]);
-
-                enemySlotPos[0].SetActive(false);
-                enemySlotPos.Remove(enemySlotPos[0]);
+                if (playerSlotPos[x].GetComponent<Card>().defence <= 0)
+                {
+                    playerSlotPos.Remove(playerSlotPos[x]);
+                }
 
             }
-            else if (playerSlotPos[0].GetComponent<Card>().defence <= 0 && enemySlotPos[0].GetComponent<Card>().defence > 0)
-            {
-                OnDeath(playerSlotPos[0].GetComponent<Card>().cardID, playerSlotPos[0]);
-                OnKill(enemySlotPos[0]);
-                Debug.Log("enemy card on kill");
-
-                playerSlotPos[0].SetActive(false);
-                playerSlotPos.Remove(playerSlotPos[0]);
-            }
-            else if (playerSlotPos[0].GetComponent<Card>().defence > 0 && enemySlotPos[0].GetComponent<Card>().defence <= 0)
-            {
-                OnDeath(enemySlotPos[0].GetComponent<Card>().cardID, enemySlotPos[0]);
-                OnKill(playerSlotPos[0]);
-
-                Debug.Log("Player card on kill");
-                enemySlotPos[0].SetActive(false);
-                enemySlotPos.Remove(enemySlotPos[0]);
-            }
-
         }
+
+        for (int x = 0; x < enemySlotPos.Count; x++)
+        {
+
+            if(enemySlotPos[x].GetComponent<Card>() != null)
+            {
+                enemySlotPos[x].GetComponent<Card>().damageInfoText.text = "";
+
+                if (enemySlotPos[x].GetComponent<Card>().defence <= 0)
+                {
+                    enemySlotPos.Remove(enemySlotPos[x]);
+                }
+            }
+        }
+    }
+
+    public void DestroyMonsterCards(GameObject card)
+    {
+        playerSlotPos.Remove(card);
+        enemySlotPos.Remove(card);
     }
 
     public void MoveCards()
@@ -690,7 +728,7 @@ public class GameLoop : MonoBehaviour
 
     }
 
-    public bool OnDeath(int id, GameObject playerID)
+    public bool OnDeathTrigger(int id, GameObject playerID)
     {
         if (id == 0)
         {
@@ -716,57 +754,30 @@ public class GameLoop : MonoBehaviour
             }
             return true;
         }
+
         if (id == 1)
         {
             if (playerID.GetComponent<Card>().playerID == player.GetComponent<Player>().id)
             {
-                if (enemySlotPos[enemyMosterSlot] != null)
+                if (enemySlotPos[enemyMosterSlot].GetComponent<Card>() != null)
                 {                 
                     enemySlotPos[enemyMosterSlot].GetComponent<Card>().defence -= 1;
-                    enemySlotPos[enemyMosterSlot].GetComponent<Card>().damageInfoText.color = Color.red;
+                    enemySlotPos[enemyMosterSlot].GetComponent<Card>().damageInfoText.color = Color.white;
                     enemySlotPos[enemyMosterSlot].GetComponent<Card>().damageInfoText.text = "-" + 1;
                 }
+                
             }
 
             if (playerID.GetComponent<Card>().playerID == enemy.GetComponent<Player>().id)
             {
-                if(playerSlotPos[playerMosterSlot] != null)
+                if(playerSlotPos[playerMosterSlot].GetComponent<Card>() != null)
                 {             
                     playerSlotPos[playerMosterSlot].GetComponent<Card>().defence -= 1;
-                    playerSlotPos[playerMosterSlot].GetComponent<Card>().damageInfoText.color = Color.red;
+                    playerSlotPos[playerMosterSlot].GetComponent<Card>().damageInfoText.color = Color.white;
                     playerSlotPos[playerMosterSlot].GetComponent<Card>().damageInfoText.text = "-" + 1;
-
                 }
             }
         }
-        if (id == -1)
-        {
-            if (playerID.GetComponent<Card>().playerID == player.GetComponent<Player>().id)
-            {
-
-            }
-
-            if (playerID.GetComponent<Card>().playerID == enemy.GetComponent<Player>().id)
-            {
-
-            }
-
-        }
-
-        if (id == -1)
-        {
-            if (playerID.GetComponent<Card>().playerID == player.GetComponent<Player>().id)
-            {
-
-            }
-
-            if (playerID.GetComponent<Card>().playerID == enemy.GetComponent<Player>().id)
-            {
-
-            }
-        }
-
-        
 
         return false;
     }

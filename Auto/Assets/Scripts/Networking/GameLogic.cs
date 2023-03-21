@@ -132,12 +132,14 @@ public class GameLogic : MonoBehaviour
             temp.GetComponent<Card>().cardLevel = int.Parse(cards[2]);
             temp.GetComponent<Card>().CheckCardLevel();
             player2.GetComponent<Player>().deckOrdered.Add(temp);
-            player2.GetComponent<Player>().id = int.Parse(cards[4]);
+            player2.GetComponent<Player>().id = int.Parse(cards[3]);//might be 3 or 4 
+            //player2.GetComponent<Player>().id = id;//might be 3 or 4 
 
             if (player2.GetComponent<Player>().deckOrdered.Count == 5)
-            {
+            {   
                 player2.GetComponent<Player>().isReady = true;
             }
+
         }
        
     }
