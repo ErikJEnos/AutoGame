@@ -26,16 +26,21 @@ public class MainMenuButtons : MonoBehaviour
     public Slider musicSlider;
     public TMP_Text musicTxt;
 
+    public GameObject Canvas;
 
     private void Update()
     {
         AudioSliders();
     }
 
-
+    public void CloseMenu()
+    {
+       CanvasObject.logined = 0;
+    }
 
     public void BackToMenuButton()
     {
+
         mainMenuPanel.SetActive(true);
         optionsPanel.SetActive(false);
         howToPlayPanel.SetActive(false);
@@ -52,6 +57,7 @@ public class MainMenuButtons : MonoBehaviour
 
     public void HowToPlayButton()
     {
+
         mainMenuPanel.SetActive(false);
         optionsPanel.SetActive(false);
         howToPlayPanel.SetActive(true);
@@ -62,6 +68,7 @@ public class MainMenuButtons : MonoBehaviour
 
     public void CustomizeButton()
     {
+
         mainMenuPanel.SetActive(false);
         optionsPanel.SetActive(false);
         howToPlayPanel.SetActive(false);
@@ -72,6 +79,7 @@ public class MainMenuButtons : MonoBehaviour
 
     public void CreditsButton()
     {
+
         mainMenuPanel.SetActive(false);
         optionsPanel.SetActive(false);
         howToPlayPanel.SetActive(false);
@@ -82,6 +90,7 @@ public class MainMenuButtons : MonoBehaviour
 
     public void AchievementsButton()
     {
+
         mainMenuPanel.SetActive(false);
         optionsPanel.SetActive(false);
         howToPlayPanel.SetActive(false);
@@ -92,6 +101,7 @@ public class MainMenuButtons : MonoBehaviour
 
     public void OptionsButton()
     {
+
         mainMenuPanel.SetActive(false);
         optionsPanel.SetActive(true);
         howToPlayPanel.SetActive(false);
@@ -109,6 +119,7 @@ public class MainMenuButtons : MonoBehaviour
 
     public void GeneralButton()
     {
+
         OptSubPanel.SetActive(true);
         OptSubPanel1.SetActive(false);
         OptSubPanel2.SetActive(false);
@@ -166,7 +177,7 @@ public class MainMenuButtons : MonoBehaviour
     
     public void QuickPlay()
     {
-        SceneManager.LoadScene("VersusMode");
+        
     }
 
 

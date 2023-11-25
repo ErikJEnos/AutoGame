@@ -11,7 +11,4 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/VersusMode.unity
     guid: ae28855b49a05e94faf9c7b60862e243
-  - enabled: 1
-    path: Assets/Scenes/QuickPlay.unity
-    guid: 2cda990e2423bbf4892e6590ba056729
   m_configObjects: {}

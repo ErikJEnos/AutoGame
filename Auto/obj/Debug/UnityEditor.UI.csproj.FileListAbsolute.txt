@@ -1,0 +1,2 @@
+C:\Users\Erik's Pc\Desktop\SchoolWork\AutoGame\Auto\obj\Debug\UnityEditor.UI.csproj.AssemblyReference.cache
+C:\Users\Erik's Pc\Desktop\SchoolWork\AutoGame\Auto\obj\Debug\UnityEditor.UI.csproj.CoreCompileInputs.cache

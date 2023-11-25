@@ -16,7 +16,13 @@ public class PickingCards : MonoBehaviour
     public GameObject Scene2;
     public GameObject Scene3;
 
+    public GameObject deckButton;
+    public GameObject shopButton;
+
+
     public List<GameObject> pickingCardList;
+
+    public bool sort = false;
 
    // public int cardPoolSize;
 
@@ -24,6 +30,10 @@ public class PickingCards : MonoBehaviour
     public int actions = 5;
 
     bool called = false;
+
+    public List<GameObject> handOrder;
+
+    public GameObject hand;
 
     // Start is called before the first frame update
     void Start()
@@ -47,23 +57,35 @@ public class PickingCards : MonoBehaviour
 
             RemoveLeftOverCards();
 
+            deckButton.SetActive(false);
+            shopButton.SetActive(false);
 
             called = true;
             actions = 3;
         }
+
+
+        array();
     }
 
     public void OnSceneLoad()
     {
+        ReOrderCards();
+
         called = false;
-        
-        foreach(GameObject card in player1.GetComponent<Player>().deck)
+
+        deckButton.SetActive(true);
+        shopButton.SetActive(true);
+
+        foreach (GameObject card in player1.GetComponent<Player>().deck)
         {
             card.GetComponent<Card>().isPoisoned = false;
+            card.GetComponent<Card>().isBleeding = false;
+            card.GetComponent<Card>().cardUIScript.damageInfoText.text = " ";
         }
 
         DisplayCardsToPick();
-
+        
     }
 
     public void ReOrderCards()
@@ -75,14 +97,8 @@ public class PickingCards : MonoBehaviour
             player1.GetComponent<Player>().deck[x].GetComponent<Card>().interactable = true;
             player1.GetComponent<Player>().deck[x].SetActive(true);
             player1.GetComponent<Player>().deck[x].transform.parent = deckSpawnLocation.transform;
-
+            
             offset += 1.5f;
-        }
-
-        int temp = player1.GetComponent<Player>().deckOrdered.Count;
-        for (int x = 0; x < temp; x++)
-        {
-            player1.GetComponent<Player>().deckOrdered.RemoveAt(0);
         }
     }
 
@@ -109,8 +125,9 @@ public class PickingCards : MonoBehaviour
     public void ReRoll()
     {
         actions--;
+        int tempCount = pickingCardList.Count;
 
-        for (int x = 0; x < 5; x++)
+        for (int x = 0; x < tempCount; x++)
         {
             GameObject temp = pickingCardList[0];
 
@@ -122,17 +139,22 @@ public class PickingCards : MonoBehaviour
             pickingCardList.RemoveAt(0);
         }
 
-        DisplayCardsToPick();
+       DisplayCardsToPick();
     }
 
     public void ChangeScene(int state)
     {
         int temp = state;
-
-        if(temp == 1)
+        if (temp == 0)
+        {
+            Scene1.SetActive(true);
+            Scene2.SetActive(false);
+        }
+        else if (temp == 1)
         {
             Scene1.SetActive(false);
             Scene2.SetActive(true);
+
         }
         else if (temp == 2)
         {
@@ -141,7 +163,6 @@ public class PickingCards : MonoBehaviour
         }
         
     } 
-
 
     private void RemoveLeftOverCards()
     {
@@ -157,6 +178,8 @@ public class PickingCards : MonoBehaviour
             }
         }
 
+        tempCount = pickingCardList.Count;
+
         for (int f = 0; f < tempCount; f++)
         {
             Destroy(pickingCardList[0]);
@@ -164,5 +187,33 @@ public class PickingCards : MonoBehaviour
         }
     }
 
+
+    public void array() 
+    {
+        if (sort && gameManager.GetComponent<GameState>().gameState == 1 && player1.GetComponent<Player>().deckOrdered.Count > 0)
+        {
+            for (int x = 0; x < player1.GetComponent<Player>().deckOrdered.Count; x++)
+            {
+                if (player1.GetComponent<Player>().deckOrdered[x].GetComponent<CardDrag>().inArray)
+                {
+                    player1.GetComponent<Player>().deckOrdered[x].transform.position = gameManager.GetComponent<PickingCards>().handOrder[x].transform.position;
+
+                }
+
+            }
+        }
+
+        RemoveCardFromNode();
+    }
+
+    public void RemoveCardFromNode()
+    {
+        for (int x = player1.GetComponent<Player>().deckOrdered.Count; x < handOrder.Count; x++)
+        {
+            handOrder[x].GetComponent<DragPos>().card = null;
+        }
+    }
+
+   
    
 }

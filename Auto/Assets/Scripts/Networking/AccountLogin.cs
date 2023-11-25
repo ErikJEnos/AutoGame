@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 
@@ -21,6 +22,27 @@ public class AccountLogin : MonoBehaviour
 
     public GameObject netWorkedClient;
 
+    public List<TMP_InputField> SaveUI;
+    public List<GameObject> SaveUIPanels;
+
+    void OnEnable()
+    {
+        if(SaveUI.Count > 0)
+        {
+            Debug.Log("OnEnable");
+            username_Input = SaveUI[0];
+            password_Input = SaveUI[1];
+            signUpUsername_Input = SaveUI[2];
+            signUpEmail_Input = SaveUI[3];
+            signUpEmailAgain_Input = SaveUI[4];
+            signUpPassword_Input = SaveUI[5];
+
+            loginPanel = SaveUIPanels[0];
+            signUpPanel = SaveUIPanels[1];
+            mainMenuPanel = SaveUIPanels[2];
+        }
+
+    }
 
 
     public void Start()

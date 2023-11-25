@@ -21,13 +21,13 @@ public class NetworkedClientProcessing
         
         if (signifierID == ServerToClientSignifiers.PlayAsGuestAccount)
         {
-            gameLogic.playerID = id;
+           // gameLogic.player1ID = id;
             gameLogic.PlayAsGuestF();
         }
 
         if (signifierID == ServerToClientSignifiers.LoginSuccessfull)
         {
-            gameLogic.playerID = id;
+           // gameLogic.player1ID = id;
             gameLogic.LoginSuccessfullF();
         }
 
@@ -40,13 +40,12 @@ public class NetworkedClientProcessing
         if (signifierID == ServerToClientSignifiers.EnterVersusGameMode)
         {
 
-            gameLogic.EnterVersusGameModeF();
+            gameLogic.EnterVersusGameModeF(temp, id);
         }
 
         if (signifierID == ServerToClientSignifiers.SendPlayerData)
         {
             gameLogic.SetPlayerData(temp, id);
-            gameLogic.SetPlayerID(temp, id);
         }
 
         if (signifierID == ServerToClientSignifiers.CheckIfPlayerIsReady)

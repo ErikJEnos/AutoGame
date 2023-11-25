@@ -71,6 +71,8 @@ public class NetworkedClient : MonoBehaviour
             HostTopology topology = new HostTopology(config, maxConnections);
             hostID = NetworkTransport.AddHost(topology, 0);
             connectionID = NetworkTransport.Connect(hostID, "192.168.0.15", socketPort, 0, out error); // server is local on network
+            //connectionID = NetworkTransport.Connect(hostID, "24.212.137.114", socketPort, 0, out error); // server is local on network
+
 
             if (error == 0)
             {

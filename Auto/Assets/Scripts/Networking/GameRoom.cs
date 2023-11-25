@@ -74,7 +74,7 @@ public class GameRoom : MonoBehaviour
             lobbyPanel.SetActive(false);
             privateLobbyPanel.SetActive(false);
             waitingForPlayerText.SetActive(true);
-            netWorkedClient.GetComponent<NetworkedClient>().SendMessageToServer(ClientToServerSignifiers.CreatePrivateLobby + "," + gameRoomName.text + ",");
+            netWorkedClient.GetComponent<NetworkedClient>().SendMessageToServer(ClientToServerSignifiers.CreatePrivateLobby + "," + gameRoomName.text + "," + "Private" + ",");
 
             Debug.Log("Waiting for players");
         }
@@ -86,8 +86,13 @@ public class GameRoom : MonoBehaviour
         {
             mainMenuPanel.SetActive(true);
             lobbyPanel.SetActive(false);
-            privateLobbyPanel.SetActive(false);
-            netWorkedClient.GetComponent<NetworkedClient>().SendMessageToServer(ClientToServerSignifiers.JoinPrivateRoom + "," + joinGameRoomName.text + ",");
+            joinPrivateLobbyPanel.SetActive(false);
+            netWorkedClient.GetComponent<NetworkedClient>().SendMessageToServer(ClientToServerSignifiers.JoinPrivateRoom + "," + joinGameRoomName.text + "," + "Private" + ",");
         }
+    }
+
+    public void QuickPlayGameButton()
+    {
+        netWorkedClient.GetComponent<NetworkedClient>().SendMessageToServer(ClientToServerSignifiers.CreatePrivateLobby + "," + "Public Game Room" + "," + "Public" + ",");
     }
 }
